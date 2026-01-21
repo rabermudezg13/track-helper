@@ -1,0 +1,45 @@
+# Configuración de Cloudflare Tunnel para From Colombia With Coffees
+# Este archivo se copiará a ~/.cloudflared/config.yml después de crear el túnel
+
+tunnel: TUNNEL_ID_AQUI
+credentials-file: /Users/rodrigobermudez/.cloudflared/TUNNEL_ID_AQUI.json
+
+ingress:
+  # TrackerCheck - Nueva aplicación
+  - hostname: trackhelper.fromcolombiawithcoffees.com
+    service: http://localhost:4031
+    originRequest:
+      noTLSVerify: true
+
+  # Kelly App - Frontend
+  - hostname: kellyapp.fromcolombiawithcoffees.com
+    service: http://localhost:3025
+    originRequest:
+      noTLSVerify: true
+
+  # Wimi
+  - hostname: wimi.fromcolombiawithcoffees.com
+    service: http://localhost:3080
+    originRequest:
+      noTLSVerify: true
+
+  # ROWG Frontdesk
+  - hostname: rowg.fromcolombiawithcoffees.com
+    service: http://localhost:3010
+    originRequest:
+      noTLSVerify: true
+
+  # Cupping App
+  - hostname: cupping.fromcolombiawithcoffees.com
+    service: http://localhost:8080
+    originRequest:
+      noTLSVerify: true
+
+  # Automations (n8n)
+  - hostname: automations.fromcolombiawithcoffees.com
+    service: http://localhost:5678
+    originRequest:
+      noTLSVerify: true
+
+  # Catch-all rule (debe ir al final)
+  - service: http_status:404

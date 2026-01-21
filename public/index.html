@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TrackerCheck - Process Time Analysis</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            animation: gradientShift 15s ease infinite;
+            background-size: 200% 200%;
+        }
+
+        @keyframes gradientShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .upload-section {
+            background: #f8f9fa;
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+        }
+
+        .upload-section:hover {
+            border-color: #764ba2;
+            background: #f0f0f0;
+        }
+
+        .upload-section.dragover {
+            border-color: #764ba2;
+            background: #e8e8ff;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-label {
+            display: inline-block;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1.1em;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+
+        .file-label:hover {
+            transform: scale(1.05);
+        }
+
+        .file-name {
+            margin-top: 15px;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .btn-process {
+            display: block;
+            margin: 20px auto;
+            padding: 15px 40px;
+            background: #28a745;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .btn-process:hover:not(:disabled) {
+            background: #218838;
+            transform: scale(1.05);
+        }
+
+        .btn-process:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+            font-size: 1.2em;
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border: 1px solid #f5c6cb;
+        }
+
+        .results {
+            margin-top: 30px;
+        }
+
+        .reclutador-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .reclutador-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .reclutador-name {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .stat-box {
+            background: white;
+            padding: 15px 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .section-title {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #333;
+            margin: 25px 0 15px 0;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px;
+            text-align: left;
+            font-weight: bold;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        tr:hover {
+            background: #f5f5f5;
+        }
+
+        .week-card, .month-card {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .week-title, .month-title {
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .average {
+            color: #28a745;
+            font-size: 1.1em;
+        }
+
+        .no-data {
+            text-align: center;
+            color: #999;
+            padding: 40px;
+            font-style: italic;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            color: white;
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .btn-export {
+            display: inline-block;
+            margin: 10px;
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+
+        .btn-export:hover {
+            background: #0056b3;
+            transform: scale(1.05);
+        }
+
+        .export-section {
+            text-align: center;
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div style="text-align: center; margin-bottom: 20px; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 15px; color: white;">
+            <h2 style="font-size: 2em; margin-bottom: 10px;">Good Morning Anthony! 👋</h2>
+            <p style="font-size: 1.2em; opacity: 0.95;">I hope to help you a lot today!</p>
+        </div>
+        <h1>📊 TrackerCheck</h1>
+        <p class="subtitle">Process Time Analysis by Recruiter</p>
+
+        <div class="upload-section" id="uploadSection">
+            <label for="excelFile" class="file-label">
+                📁 Select Excel File
+            </label>
+            <input type="file" id="excelFile" accept=".xlsx,.xls" />
+            <div class="file-name" id="fileName">No file selected</div>
+        </div>
+
+        <button class="btn-process" id="processBtn" disabled>Process File</button>
+
+        <div id="loading" class="loading" style="display: none;">
+            ⏳ Processing file...
+        </div>
+
+        <div id="error" class="error" style="display: none;"></div>
+
+        <div id="results" class="results"></div>
+    </div>
+
+    <div class="footer">
+        <p>TrackerCheck v1.0 | Made with ❤️ for efficient recruitment tracking</p>
+        <p>© 2024 From Colombia With Coffees</p>
+    </div>
+
+    <script>
+        const excelFileInput = document.getElementById('excelFile');
+        const fileNameDiv = document.getElementById('fileName');
+        const processBtn = document.getElementById('processBtn');
+        const uploadSection = document.getElementById('uploadSection');
+        const loadingDiv = document.getElementById('loading');
+        const errorDiv = document.getElementById('error');
+        const resultsDiv = document.getElementById('results');
+
+        let selectedFile = null;
+
+        // Handle file selection
+        excelFileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                selectedFile = file;
+                fileNameDiv.textContent = `Selected file: ${file.name}`;
+                processBtn.disabled = false;
+            }
+        });
+
+        // Drag and drop
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('dragover');
+        });
+
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('dragover');
+        });
+
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && (file.name.endsWith('.xlsx') || file.name.endsWith('.xls'))) {
+                selectedFile = file;
+                excelFileInput.files = e.dataTransfer.files;
+                fileNameDiv.textContent = `Selected file: ${file.name}`;
+                processBtn.disabled = false;
+            } else {
+                showError('Please select a valid Excel file (.xlsx or .xls)');
+            }
+        });
+
+        // Process file
+        processBtn.addEventListener('click', async () => {
+            if (!selectedFile) {
+                showError('Please select a file first');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('excelFile', selectedFile);
+
+            loadingDiv.style.display = 'block';
+            errorDiv.style.display = 'none';
+            resultsDiv.innerHTML = '';
+            processBtn.disabled = true;
+
+            try {
+                // Use relative URL - works both locally and in production
+                const apiUrl = '/api/process';
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Error processing file');
+                }
+
+                displayResults(data.data);
+            } catch (error) {
+                showError(error.message);
+            } finally {
+                loadingDiv.style.display = 'none';
+                processBtn.disabled = false;
+            }
+        });
+
+        function showError(message) {
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function displayResults(data) {
+            if (!data || data.length === 0) {
+                resultsDiv.innerHTML = '<div class="no-data">No data found to process</div>';
+                return;
+            }
+
+            let html = `<h2 style="margin-bottom: 20px;">Results: ${data.length} Recruiter(s)</h2>`;
+
+            data.forEach(reclutador => {
+                const totalProcesos = reclutador.procesos.length;
+                const promedioGeneral = reclutador.procesos.length > 0
+                    ? (reclutador.procesos.reduce((sum, p) => sum + p.tiempoProceso, 0) / reclutador.procesos.length).toFixed(2)
+                    : 0;
+
+                html += `
+                    <div class="reclutador-card">
+                        <div class="reclutador-header">
+                            <div class="reclutador-name">👤 ${reclutador.reclutador || 'No name'}</div>
+                            <div class="stats">
+                                <div class="stat-box">
+                                    <div class="stat-label">Total Processes</div>
+                                    <div class="stat-value">${totalProcesos}</div>
+                                </div>
+                                <div class="stat-box">
+                                    <div class="stat-label">Overall Average</div>
+                                    <div class="stat-value">${promedioGeneral} days</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section-title">📋 Individual Processes</div>
+                        ${reclutador.procesos.length > 0 ? `
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Applicant</th>
+                                        <th>Date Added</th>
+                                        <th>Date Activated</th>
+                                        <th>Process Time (days)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${reclutador.procesos.map(proceso => `
+                                        <tr>
+                                            <td>${proceso.aspirante || 'N/A'}</td>
+                                            <td>${proceso.fechaAnadido}</td>
+                                            <td>${proceso.fechaActivado}</td>
+                                            <td><strong>${proceso.tiempoProceso}</strong></td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        ` : '<div class="no-data">No registered processes</div>'}
+
+                        <div class="section-title">📅 Weekly Averages</div>
+                        ${reclutador.semanas.length > 0 ? `
+                            ${reclutador.semanas
+                                .sort((a, b) => b.semana.localeCompare(a.semana))
+                                .slice(0, 1)
+                                .map(semana => `
+                                <div class="week-card">
+                                    <div class="week-title">Week ${semana.semana} (Most Recent)</div>
+                                    <div class="average">Average: ${semana.promedio} days (${semana.tiempos.length} process(es))</div>
+                                </div>
+                            `).join('')}
+                            ${reclutador.semanas.length > 1 ? `
+                                <details style="margin-top: 10px;">
+                                    <summary style="cursor: pointer; padding: 10px; background: #f0f0f0; border-radius: 5px;">
+                                        Show ${reclutador.semanas.length - 1} older week(s)
+                                    </summary>
+                                    <div style="margin-top: 10px;">
+                                        ${reclutador.semanas
+                                            .sort((a, b) => b.semana.localeCompare(a.semana))
+                                            .slice(1)
+                                            .map(semana => `
+                                            <div class="week-card">
+                                                <div class="week-title">Week ${semana.semana}</div>
+                                                <div class="average">Average: ${semana.promedio} days (${semana.tiempos.length} process(es))</div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </details>
+                            ` : ''}
+                        ` : '<div class="no-data">No weekly data available</div>'}
+
+                        <div class="section-title">📆 Monthly Averages</div>
+                        ${reclutador.meses.length > 0 ? `
+                            ${reclutador.meses
+                                .sort((a, b) => b.mes.localeCompare(a.mes))
+                                .slice(0, 1)
+                                .map(mes => `
+                                <div class="month-card">
+                                    <div class="month-title">Month ${mes.mes} (Most Recent)</div>
+                                    <div class="average">Average: ${mes.promedio} days (${mes.tiempos.length} process(es))</div>
+                                </div>
+                            `).join('')}
+                            ${reclutador.meses.length > 1 ? `
+                                <details style="margin-top: 10px;">
+                                    <summary style="cursor: pointer; padding: 10px; background: #f0f0f0; border-radius: 5px;">
+                                        Show ${reclutador.meses.length - 1} older month(s)
+                                    </summary>
+                                    <div style="margin-top: 10px;">
+                                        ${reclutador.meses
+                                            .sort((a, b) => b.mes.localeCompare(a.mes))
+                                            .slice(1)
+                                            .map(mes => `
+                                            <div class="month-card">
+                                                <div class="month-title">Month ${mes.mes}</div>
+                                                <div class="average">Average: ${mes.promedio} days (${mes.tiempos.length} process(es))</div>
+                                            </div>
+                                        `).join('')}
+                                    </div>
+                                </details>
+                            ` : ''}
+                        ` : '<div class="no-data">No monthly data available</div>'}
+                    </div>
+                `;
+            });
+
+            resultsDiv.innerHTML = html;
+        }
+    </script>
+</body>
+</html>

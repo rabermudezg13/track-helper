@@ -1,0 +1,35 @@
+# Versión standalone - Usa esta si NO tienes nginx en el servidor
+# Renombra este archivo a docker-compose.yml o usa: docker-compose -f docker-compose.standalone.yml up
+
+services:
+  trackercheck:
+    build: .
+    container_name: trackercheck-app
+    restart: unless-stopped
+    ports:
+      - "3030:3030"
+      - "3031:3031"
+    volumes:
+      - ./uploads:/app/uploads
+      - ./public:/app/public
+    networks:
+      - trackercheck-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: trackercheck-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/trackerhelper.conf:/etc/nginx/conf.d/trackerhelper.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - trackercheck
+    networks:
+      - trackercheck-network
+
+networks:
+  trackercheck-network:
+    driver: bridge

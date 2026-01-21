@@ -1,0 +1,16 @@
+services:
+  trackercheck:
+    build: .
+    container_name: trackercheck-app
+    restart: unless-stopped
+    ports:
+      - "4030:3030"  # Unified API + Frontend
+      - "4031:3030"  # Same unified server on port 4031 for Cloudflare
+    volumes:
+      - ./uploads:/app/uploads
+      - ./public:/app/public
+    environment:
+      - NODE_ENV=production
+      - API_PORT=3030
+      - FRONTEND_PORT=3031
+      - CORS_ORIGIN=*
